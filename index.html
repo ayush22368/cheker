@@ -15,18 +15,15 @@
   <button id="connectBtn">Connect Wallet</button>
   <div id="address"></div>
 
-  <!-- Wallet-Adapter UMD bundle (no separate CORS files) -->
+  <!-- Wallet-Adapter UMD bundle (includes all wallets & mobile adapter) -->
   <script src="https://unpkg.com/@solana/wallet-adapter-umd@0.9.23/lib/index.iife.min.js"></script>
+  <!-- Web3.js -->
   <script src="https://unpkg.com/@solana/web3.js@1/lib/index.iife.min.js"></script>
 
-  <script type="module">
-    /* Grab the globals injected by the UMD bundles */
+  <script>
+    /* globals injected by the bundles above */
     const { WalletAdapterNetwork } = window.SolanaWalletAdapterBase;
     const { PhantomWalletAdapter, SolflareWalletAdapter } = window.SolanaWalletAdapterWallets;
-    const { clusterApiUrl } = window.solanaWeb3;
-
-    const network  = WalletAdapterNetwork.Devnet;
-    const endpoint = clusterApiUrl(network);
 
     let adapter;
 
@@ -34,6 +31,8 @@
     const address = document.getElementById('address');
 
     btn.addEventListener('click', async () => {
+      // On desktop: Phantom extension → use Phantom adapter
+      // On mobile: Mobile Wallet Adapter will pop up
       adapter = window.solana?.isPhantom
         ? new PhantomWalletAdapter()
         : new SolflareWalletAdapter();
