@@ -1,78 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Solana – Universal Wallet Connect</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Solana Universal Wallet Connect</title>
   <style>
-    body {font-family:Arial,Helvetica,sans-serif;background:#111;color:#eee;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;}
-    button {padding:12px 24px;font-size:16px;border:none;border-radius:6px;background:#9945ff;color:#fff;cursor:pointer}
-    button:disabled {background:#555;cursor:not-allowed}
-    #address {margin-top:12px;font-family:monospace;font-size:14px;color:#0f0}
+    body{font-family:Arial,Helvetica,sans-serif;background:#111;color:#eee;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0}
+    button{padding:14px 28px;font-size:16px;border:none;border-radius:8px;background:#9945ff;color:#fff;cursor:pointer}
+    button:disabled{background:#555;cursor:not-allowed}
+    #address{margin-top:12px;font-family:monospace;font-size:14px;color:#0f0}
   </style>
 </head>
 <body>
   <button id="connectBtn">Connect Wallet</button>
   <div id="address"></div>
 
-  <!-- Wallet-Adapter ES modules -->
-  <script type="module">
-    import { WalletAdapterNetwork } from 'https://unpkg.com/@solana/wallet-adapter-base@0.9.23/lib/esm/index.js';
-    import { PhantomWalletAdapter }   from 'https://unpkg.com/@solana/wallet-adapter-wallets@0.19.16/lib/esm/adapters/phantom.js';
-    import { SolflareWalletAdapter }  from 'https://unpkg.com/@solana/wallet-adapter-wallets@0.19.16/lib/esm/adapters/solflare.js';
-    import { GlowWalletAdapter }      from 'https://unpkg.com/@solana/wallet-adapter-wallets@0.19.16/lib/esm/adapters/glow.js';
-    import { WalletModalProvider, WalletMultiButton } from 'https://unpkg.com/@solana/wallet-adapter-react-ui@0.9.35/lib/esm/index.js';
-    import { ConnectionProvider, WalletProvider }     from 'https://unpkg.com/@solana/wallet-adapter-react@0.15.32/lib/esm/index.js';
-    import { clusterApiUrl, PublicKey } from 'https://unpkg.com/@solana/web3.js@1.87.6/lib/index.browser.esm.js';
-    import React, { useEffect, useState } from 'https://unpkg.com/react@18/umd/react.development.js';
-    import ReactDOM from 'https://unpkg.com/react-dom@18/umd/react-dom.development.js';
+  <!-- Wallet-Adapter **UMD bundle** (one file, no CORS issues) -->
+  <script src="https://unpkg.com/@solana/wallet-adapter-umd@0.9.23/lib/index.iife.min.js"></script>
 
-    /* --- React glue for wallet-adapter (minimal) ------------------------- */
-    const network = WalletAdapterNetwork.Devnet;
-    const endpoint = clusterApiUrl(network);
+  <script>
+    const { PhantomWalletAdapter, SolflareWalletAdapter } = window.SolanaWalletAdapterWallets;
+    const { WalletAdapterNetwork }                        = window.SolanaWalletAdapterBase;
+    const { clusterApiUrl, PublicKey }                    = window.solanaWeb3;
 
-    const wallets = [
-      new PhantomWalletAdapter(),
-      new SolflareWalletAdapter(),
-      new GlowWalletAdapter(),
-    ];
+    const network   = WalletAdapterNetwork.Devnet;
+    const endpoint  = clusterApiUrl(network);
 
-    function App() {
-      const [pubkey, setPubkey] = useState(null);
+    let wallet;   // will hold the chosen adapter
 
-      useEffect(() => {
-        // Auto-detect adapter change
-        const onChange = () => {
-          const adapter = window.solana?.wallet?.adapter;
-          setPubkey(adapter?.publicKey?.toString() || null);
-        };
-        window.addEventListener('wallet-standard:app-ready', onChange);
-        return () => window.removeEventListener('wallet-standard:app-ready', onChange);
-      }, []);
+    const btn     = document.getElementById('connectBtn');
+    const address = document.getElementById('address');
 
-      return React.createElement(
-        ConnectionProvider,
-        { endpoint },
-        React.createElement(
-          WalletProvider,
-          { wallets, autoConnect: true },
-          React.createElement(
-            WalletModalProvider,
-            null,
-            React.createElement(
-              'div',
-              null,
-              React.createElement(WalletMultiButton),
-              pubkey && React.createElement('div', { id: 'address' }, `Connected: ${pubkey}`)
-            )
-          )
-        )
-      );
-    }
+    btn.addEventListener('click', async () => {
+      // 1) On desktop the extension is injected as window.solana
+      // 2) On mobile the Mobile Wallet Adapter auto-handles wallet selection
+      wallet = window.solana?.isPhantom
+        ? new PhantomWalletAdapter()
+        : new SolflareWalletAdapter();
 
-    // Render React tree into body
-    const root = ReactDOM.createRoot(document.body);
-    root.render(React.createElement(App));
+      try {
+        await wallet.connect();
+        address.textContent = `Connected: ${wallet.publicKey.toString()}`;
+        btn.disabled = true;
+      } catch (err) {
+        console.error(err);
+        address.textContent = 'Connection failed / cancelled';
+      }
+    });
   </script>
 </body>
 </html>
