@@ -17,13 +17,14 @@
 
   <!-- Web3.js -->
   <script src="https://unpkg.com/@solana/web3.js@1/lib/index.iife.min.js"></script>
-  <!-- Wallet-Adapter UMD bundle (all wallets + mobile adapter) -->
+  <!-- Wallet-Adapter UMD bundle (base + wallets + mobile adapter) -->
   <script src="https://unpkg.com/@solana/wallet-adapter-umd@0.9.23/lib/index.iife.min.js"></script>
 
   <script>
-    /* Available globals after the scripts above load */
-    const { WalletAdapterNetwork } = window.SolanaWalletAdapterBase;
-    const { PhantomWalletAdapter, SolflareWalletAdapter } = window.SolanaWalletAdapterWallets;
+    /* Resolve the correct global */
+    const wallets = window.SolanaWalletAdapterWallets || window.SolanaWalletAdapter?.wallets || {};
+    const { PhantomWalletAdapter, SolflareWalletAdapter } = wallets;
+    const { WalletAdapterNetwork } = window.SolanaWalletAdapterBase || window.SolanaWalletAdapter?.base || {};
     const { clusterApiUrl } = window.solanaWeb3;
 
     const network  = WalletAdapterNetwork.Devnet;
