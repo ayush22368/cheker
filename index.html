@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Solana Universal Wallet Connect</title>
   <style>
-    body{font-family:Arial,Helvetica,sans-serif;background:#111;color:#eee;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0}
+    body{font-family:Arial,Helvetica,sans-serif;background:#111;color:#eee;height:100vh;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
     button{padding:14px 28px;font-size:16px;border:none;border-radius:8px;background:#9945ff;color:#fff;cursor:pointer}
     button:disabled{background:#555;cursor:not-allowed}
     #address{margin-top:12px;font-family:monospace;font-size:14px;color:#0f0}
@@ -15,32 +15,32 @@
   <button id="connectBtn">Connect Wallet</button>
   <div id="address"></div>
 
-  <!-- Wallet-Adapter **UMD bundle** (one file, no CORS issues) -->
+  <!-- Wallet-Adapter UMD bundle (no separate CORS files) -->
   <script src="https://unpkg.com/@solana/wallet-adapter-umd@0.9.23/lib/index.iife.min.js"></script>
+  <script src="https://unpkg.com/@solana/web3.js@1/lib/index.iife.min.js"></script>
 
-  <script>
+  <script type="module">
+    /* Grab the globals injected by the UMD bundles */
+    const { WalletAdapterNetwork } = window.SolanaWalletAdapterBase;
     const { PhantomWalletAdapter, SolflareWalletAdapter } = window.SolanaWalletAdapterWallets;
-    const { WalletAdapterNetwork }                        = window.SolanaWalletAdapterBase;
-    const { clusterApiUrl, PublicKey }                    = window.solanaWeb3;
+    const { clusterApiUrl } = window.solanaWeb3;
 
-    const network   = WalletAdapterNetwork.Devnet;
-    const endpoint  = clusterApiUrl(network);
+    const network  = WalletAdapterNetwork.Devnet;
+    const endpoint = clusterApiUrl(network);
 
-    let wallet;   // will hold the chosen adapter
+    let adapter;
 
     const btn     = document.getElementById('connectBtn');
     const address = document.getElementById('address');
 
     btn.addEventListener('click', async () => {
-      // 1) On desktop the extension is injected as window.solana
-      // 2) On mobile the Mobile Wallet Adapter auto-handles wallet selection
-      wallet = window.solana?.isPhantom
+      adapter = window.solana?.isPhantom
         ? new PhantomWalletAdapter()
         : new SolflareWalletAdapter();
 
       try {
-        await wallet.connect();
-        address.textContent = `Connected: ${wallet.publicKey.toString()}`;
+        await adapter.connect();
+        address.textContent = `Connected: ${adapter.publicKey.toString()}`;
         btn.disabled = true;
       } catch (err) {
         console.error(err);
